@@ -1,0 +1,313 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   REMARK — Global Foundations
+   All @font-face declarations, CSS custom properties, and
+   base resets. Do not add component styles here.
+   ============================================================ */
+
+/* ── Nimora (display) ─────────────────────────────────────── */
+@font-face {
+  font-family: 'Nimora';
+  src: url('/fonts/Nimora.woff') format('woff'),
+       url('/fonts/Nimora.otf')  format('opentype'),
+       url('/fonts/Nimora.ttf')  format('truetype');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Poppins (body / UI) — all used weights ───────────────── */
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-LightItalic.ttf') format('truetype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-MediumItalic.ttf') format('truetype');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-SemiBoldItalic.ttf') format('truetype');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Poppins';
+  src: url('/fonts/Poppins-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── CSS Custom Properties ─────────────────────────────────── */
+:root {
+  /* Brand palette — EXACT, no substitutions */
+  --remark-red:    #D6272E;
+  --remark-black:  #1A1A1A;
+  --remark-cream:  #F5F0E8;
+  --remark-white:  #FFFFFF;
+  --remark-yellow: #FFB719;
+  --remark-blue:   #72C3D7;
+  --remark-orange: #DE5829;
+  --remark-pink:   #EBB2BB;
+
+  /* Canonical global background — single source of truth for the
+     site-wide black. Every main section reuses this so there are no
+     tonal seams between Hero / Statement / Services. */
+  --bg-base:           #0D0D0D;
+  --bg-elevated:       #141414;
+
+  /* Semantic roles — dark-first theme.
+     Text/ink reads light by default; light-surface tokens (kept below)
+     are only used by the floating navbar chrome. */
+  --color-bg:          var(--bg-base);
+  --color-bg-alt:      var(--bg-elevated);
+  --color-ink:         var(--remark-cream);
+  --color-ink-strong:  var(--remark-white);
+  --color-ink-soft:    rgba(245, 240, 232, 0.72);
+  --color-ink-muted:   rgba(245, 240, 232, 0.52);
+  --color-primary:     var(--remark-red);
+  --color-on-primary:  var(--remark-white);
+  --color-line:        rgba(245, 240, 232, 0.14);
+  --color-line-strong: var(--remark-cream);
+
+  /* Light-surface tokens (navbar pill, etc.) */
+  --surface-light:     var(--remark-cream);
+  --ink-on-light:      var(--remark-black);
+
+  /* Tints */
+  --red-tint:    #FBE4E5;
+  --yellow-tint: #FFF1D4;
+  --blue-tint:   #E4F3F7;
+  --pink-tint:   #FAEEF0;
+
+  /* Type families */
+  --font-display: 'Nimora', 'Poppins', sans-serif;
+  --font-body:    'Poppins', sans-serif;
+
+  /* Fluid type scale */
+  --fs-hero:     clamp(60px, 10vw, 160px);
+  --fs-display:  clamp(40px, 6vw, 96px);
+  --fs-subhead:  clamp(24px, 3vw, 48px);
+  --fs-title:    clamp(22px, 2.2vw, 32px);
+  --fs-body-lg:  clamp(18px, 1.4vw, 22px);
+  --fs-body:     clamp(16px, 1.2vw, 18px);
+  --fs-caption:  clamp(12px, 1vw, 14px);
+  --fs-nav:      16px;
+
+  /* Weights */
+  --fw-light:        300;
+  --fw-regular:      400;
+  --fw-medium:       500;
+  --fw-semibold:     600;
+  --fw-bold:         700;
+  --fw-display:      400;
+  --fw-display-bold: 700;
+
+  /* Line heights */
+  --lh-tight:  0.95;
+  --lh-snug:   1.1;
+  --lh-normal: 1.6;
+
+  /* Letter spacing */
+  --ls-tight:   -0.01em;
+  --ls-caption:  0.1em;
+
+  /* Layout */
+  --container-max: 1320px;
+  --container-pad: clamp(24px, 5vw, 80px);
+  --section-y:     clamp(80px, 14vh, 140px);
+
+  /* Radii */
+  --radius-sm:   10px;
+  --radius-md:   18px;
+  --radius-lg:   28px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(26, 26, 26, 0.06);
+  --shadow-md: 0 10px 30px rgba(26, 26, 26, 0.10);
+  --shadow-lg: 0 24px 60px rgba(26, 26, 26, 0.14);
+
+  /* Motion */
+  --ease-out:  cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast:  140ms;
+  --dur-med:   280ms;
+  --dur-slow:  520ms;
+}
+
+/* ── Base resets ───────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  min-height: 100dvh;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+}
+
+/* ── Reduced-motion overrides ──────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Layout helpers ────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+.section {
+  padding-block: var(--section-y);
+}
+
+/* ── Brushstroke highlight wrapper ─────────────────────────── */
+.highlight-word {
+  position: relative;
+  display: inline-block;
+}
+
+.highlight-word .brushstroke {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Dark-theme helpers ────────────────────────────────────────
+   Reusable radial vignette that seats the blurred colour blobs and
+   protects copy legibility. Sits between the blob layer (z-0) and the
+   content (z-2+). Pointer-transparent and decorative only. */
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(
+    115% 90% at 50% 48%,
+    rgba(13, 13, 13, 0) 42%,
+    rgba(13, 13, 13, 0.55) 78%,
+    rgba(13, 13, 13, 0.82) 100%
+  );
+}
+
+/* A single colour blob: blurred, screen-blended glow on the black base.
+   Movement (idle drift + pointer parallax) is applied inline per-blob
+   via Framer Motion; this only carries the static visual treatment. */
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  will-change: transform;
+}
