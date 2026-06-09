@@ -28,11 +28,11 @@ const LIGHT_COLORS = ['#D6272E', '#FFB719', '#72C3D7', '#DE5829', '#EBB2BB']
 // Shared layout: identical positions/sizes across every section so the field
 // reads as one continuous living background rather than per-section blobs.
 const BLOBS: BlobDef[] = [
-  { size: 560, top: '18%', left: '64%', ampX: 80, ampY: 70, dur: 15, depth: 0.11 },
-  { size: 520, top: '42%', left: '10%', ampX: 65, ampY: 90, dur: 16, depth: 0.06 },
-  { size: 520, top: '62%', left: '52%', ampX: 75, ampY: 60, dur: 18, depth: 0.13 },
-  { size: 500, top: '30%', left: '28%', ampX: 90, ampY: 80, dur: 20, depth: 0.08 },
-  { size: 540, top: '76%', left: '42%', ampX: 70, ampY: 65, dur: 13, depth: 0.10 },
+  { size: 620, top: '52%', left: '46%', ampX: 80, ampY: 70, dur: 15, depth: 0.13 },
+  { size: 560, top: '64%', left: '22%', ampX: 65, ampY: 90, dur: 16, depth: 0.08 },
+  { size: 580, top: '70%', left: '68%', ampX: 75, ampY: 60, dur: 18, depth: 0.14 },
+  { size: 520, top: '46%', left: '70%', ampX: 90, ampY: 80, dur: 20, depth: 0.10 },
+  { size: 600, top: '78%', left: '44%', ampX: 70, ampY: 65, dur: 13, depth: 0.11 },
 ]
 
 const PARALLAX_SPRING = { stiffness: 45, damping: 18, mass: 0.6 }
