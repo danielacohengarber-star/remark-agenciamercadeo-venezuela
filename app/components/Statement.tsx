@@ -1,31 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  motion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-  useReducedMotion,
-} from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import BubbleField from './BubbleField'
 
 type Segment = {
   text: string
   underline?: string
   color?: string
   bold?: boolean
-}
-
-type BlobDef = {
-  color: string
-  size: number
-  top: string
-  left: string
-  ampX: number
-  ampY: number
-  dur: number
-  /** Pointer-parallax factor (0–1). Different per blob → layered depth. */
-  depth: number
 }
 
 const LINE_1: Segment[] = [
@@ -42,25 +25,15 @@ const LINE_2: Segment[] = [
 ]
 
 // "destacamos" lives in the final phrase so it gets the erase + rewrite-in-red
-// treatment. Full sentence: "Tomamos marcas, mensajes y proyectos y destacamos
-// lo que merece ser subrayado."
-const FINAL_TEXT = 'destacamos lo que merece ser subrayado'
+// treatment. The \n breaks it across two lines ("…merece" / "ser subrayado.").
+// Full sentence: "Tomamos marcas, mensajes y proyectos y destacamos lo que
+// merece ser subrayado."
+const FINAL_TEXT = 'destacamos lo que merece\nser subrayado.'
 
 const BASE_SEGMENTS = [...LINE_1, ...LINE_2]
 const BASE_TEXT = BASE_SEGMENTS.map((segment) => segment.text).join('')
 
 const TYPE_SPEED = 42
-
-// Soft, trailing spring for the pointer parallax — premium, not snappy.
-const PARALLAX_SPRING = { stiffness: 45, damping: 18, mass: 0.6 }
-
-const BLOBS: BlobDef[] = [
-  { color: '#D6272E', size: 500, top: '8%',  left: '60%', ampX: 80, ampY: 70, dur: 15, depth: 0.10 },
-  { color: '#FFB719', size: 460, top: '58%', left: '5%',  ampX: 65, ampY: 90, dur: 16, depth: 0.06 },
-  { color: '#72C3D7', size: 480, top: '72%', left: '70%', ampX: 75, ampY: 60, dur: 18, depth: 0.12 },
-  { color: '#DE5829', size: 440, top: '20%', left: '20%', ampX: 90, ampY: 80, dur: 20, depth: 0.08 },
-  { color: '#EBB2BB', size: 490, top: '42%', left: '45%', ampX: 70, ampY: 65, dur: 13, depth: 0.10 },
-]
 
 export default function Statement() {
   const reduce = useReducedMotion()
@@ -70,7 +43,6 @@ export default function Statement() {
   const [finalTyped, setFinalTyped] = useState(0)
   const [active, setActive] = useState(false)
   const [runKey, setRunKey] = useState(0)
-  const [mouseEnabled, setMouseEnabled] = useState(false)
 
   // The closing phrase types in white, erases itself, then rewrites in red and
   // finally draws the red "subrayado" beneath it.
@@ -78,34 +50,6 @@ export default function Statement() {
     'hidden' | 'typing' | 'erasing' | 'retyping' | 'done'
   >('hidden')
   const [finalColor, setFinalColor] = useState<'white' | 'red'>('white')
-
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  useEffect(() => {
-    const check = () => {
-      const fine = window.matchMedia('(pointer: fine)').matches
-      const wide = window.matchMedia('(min-width: 769px)').matches
-      if (fine && wide && !reduce) setMouseEnabled(true)
-    }
-    check()
-    // Re-check on first pointer move in case the check ran too early
-    // (e.g. while the preloader was still blocking input).
-    window.addEventListener('pointermove', check, { once: true })
-    return () => window.removeEventListener('pointermove', check)
-  }, [reduce])
-
-  useEffect(() => {
-    if (!mouseEnabled) return
-
-    const onMove = (event: MouseEvent) => {
-      mouseX.set(event.clientX - window.innerWidth / 2)
-      mouseY.set(event.clientY - window.innerHeight / 2)
-    }
-
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [mouseEnabled, mouseX, mouseY])
 
   useEffect(() => {
     const section = sectionRef.current
@@ -155,6 +99,7 @@ export default function Statement() {
         timers.push(
           window.setTimeout(() => {
             setFinalMode('typing')
+            setFinalColor('white')
 
             const finalInterval = window.setInterval(() => {
               finalIndex += 1
@@ -199,13 +144,13 @@ export default function Statement() {
                             }, TYPE_SPEED)
 
                             timers.push(retypeInterval)
-                          }, 180)
+                          }, 200)
                         )
                       }
-                    }, TYPE_SPEED * 0.7) // erase slightly faster than typing
+                    }, TYPE_SPEED * 0.65) // erase slightly faster than typing
 
                     timers.push(eraseInterval)
-                  }, 400)
+                  }, 420)
                 )
               }
             }, TYPE_SPEED)
@@ -249,19 +194,10 @@ export default function Statement() {
           overflow: 'hidden',
         }}
       >
+        <BubbleField lightMode={false} />
+
         {/* Radial vignette: seats the colour blobs and keeps the copy crisp. */}
         <div aria-hidden="true" className="bg-vignette" />
-
-        {BLOBS.map((blob, index) => (
-          <Blob
-            key={index}
-            blob={blob}
-            mouseX={mouseX}
-            mouseY={mouseY}
-            mouseEnabled={mouseEnabled}
-            reduce={!!reduce}
-          />
-        ))}
 
         <div
           className="container"
@@ -360,7 +296,7 @@ function TypedSegments({
             style={{
               position: 'relative',
               color: segment.color ?? '#F5F0E8',
-              fontWeight: segment.bold ? 700 : 400,
+              fontWeight: segment.bold ? 600 : 400,
               whiteSpace: 'pre',
               display: 'inline-block',
               transform: segment.bold
@@ -418,18 +354,28 @@ function FinalText({
   color: string
   reduce: boolean
 }) {
+  // Render the \n inside FINAL_TEXT as a real <br />
+  const visibleText = FINAL_TEXT.slice(0, typed)
+  const lines = visibleText.split('\n')
+
   return (
     <span
       style={{
         position: 'relative',
         color: color,
-        transition: 'color 0.2s ease',
-        fontWeight: 700,
-        whiteSpace: 'pre',
-        display: 'inline-block',
+        fontWeight: 600,
+        fontStyle: color === '#D6272E' ? 'italic' : 'normal',
+        transition: 'color 0.15s ease, font-style 0.15s ease',
+        whiteSpace: 'pre-wrap',
+        display: 'inline',
       }}
     >
-      {FINAL_TEXT.slice(0, typed)}
+      {lines.map((line, i) => (
+        <span key={i}>
+          {i > 0 && <br />}
+          {line}
+        </span>
+      ))}
 
       {showUnderline && (
         <svg
@@ -488,84 +434,3 @@ function TypingCursor({ color }: { color: string }) {
   )
 }
 
-function Blob({
-  blob,
-  mouseX,
-  mouseY,
-  mouseEnabled,
-  reduce,
-}: {
-  blob: BlobDef
-  mouseX: ReturnType<typeof useMotionValue<number>>
-  mouseY: ReturnType<typeof useMotionValue<number>>
-  mouseEnabled: boolean
-  reduce: boolean
-}) {
-  // Outer layer = pointer parallax, inner layer = idle drift (composed via
-  // nesting so the two transforms don't overwrite each other).
-  const springX = useSpring(mouseX, PARALLAX_SPRING)
-  const springY = useSpring(mouseY, PARALLAX_SPRING)
-  const parallaxX = useTransform(springX, (v) => v * blob.depth)
-  const parallaxY = useTransform(springY, (v) => v * blob.depth)
-
-  return (
-    <motion.div
-      aria-hidden="true"
-      style={{
-        position: 'absolute',
-        top: blob.top,
-        left: blob.left,
-        width: blob.size,
-        height: blob.size,
-        zIndex: 0,
-        pointerEvents: 'none',
-        willChange: 'transform',
-        x: mouseEnabled ? parallaxX : 0,
-        y: mouseEnabled ? parallaxY : 0,
-      }}
-    >
-      <motion.div
-        animate={
-          reduce
-            ? {}
-            : {
-                x: [
-                  -blob.ampX,
-                  blob.ampX,
-                  -blob.ampX * 0.6,
-                  blob.ampX * 0.8,
-                  -blob.ampX,
-                ],
-                y: [
-                  blob.ampY * 0.5,
-                  -blob.ampY,
-                  blob.ampY * 0.8,
-                  -blob.ampY * 0.4,
-                  blob.ampY * 0.5,
-                ],
-              }
-        }
-        transition={
-          reduce
-            ? {}
-            : {
-                duration: blob.dur,
-                repeat: Infinity,
-                repeatType: 'mirror',
-                ease: 'easeInOut',
-              }
-        }
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: '50%',
-          backgroundColor: blob.color,
-          filter: 'blur(110px)',
-          opacity: 0.32,
-          mixBlendMode: 'screen',
-          willChange: 'transform',
-        }}
-      />
-    </motion.div>
-  )
-}

@@ -300,18 +300,6 @@ button {
   );
 }
 
-/* A single colour blob: blurred, screen-blended glow on the black base.
-   Movement (idle drift + pointer parallax) is applied inline per-blob
-   via Framer Motion; this only carries the static visual treatment. */
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-  mix-blend-mode: screen;
-  pointer-events: none;
-  will-change: transform;
-}
-
 /* Light variant of the vignette for sections on the cream/beige surface
    (e.g. Services). Fades toward beige at the edges instead of black. */
 .bg-vignette-light {
@@ -322,28 +310,7 @@ button {
   background: radial-gradient(
     115% 90% at 50% 48%,
     rgba(245, 240, 232, 0) 42%,
-    rgba(245, 240, 232, 0.55) 78%,
-    rgba(245, 240, 232, 0.82) 100%
+    rgba(245, 240, 232, 0.5) 78%,
+    rgba(245, 240, 232, 0.78) 100%
   );
-}
-
-/* ── Statement (black) → Services (beige) gradient bridge ──────
-   A near-imperceptible fade at the top of the Services section so the
-   eye can't pin where the black ends and the beige begins. */
-.services-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 320px;
-  background: linear-gradient(
-    to bottom,
-    #0d0d0d 0%,
-    rgba(13, 13, 13, 0.92) 20%,
-    rgba(245, 240, 232, 0.12) 65%,
-    rgba(245, 240, 232, 0) 100%
-  );
-  pointer-events: none;
-  z-index: 1;
 }

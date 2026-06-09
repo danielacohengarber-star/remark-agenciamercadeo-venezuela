@@ -1,13 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import {
-  motion,
-  useReducedMotion,
-  useMotionValue,
-  useSpring,
-  useTransform,
-} from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
+import BubbleField from './BubbleField'
 
 interface CopyPart {
   text: string
@@ -19,19 +14,6 @@ interface Service {
   title: string
   color: string
   copy: CopyPart[]
-}
-
-interface BlobDef {
-  size: number
-  top: string
-  left: string
-  ampX: number
-  ampY: number
-  dur: number
-  opacity: number
-  tone: 0 | 1 | 2
-  /** Pointer-parallax factor (0–1). Different per blob → layered depth. */
-  depth: number
 }
 
 const SERVICES: Service[] = [
@@ -95,58 +77,7 @@ const SERVICES: Service[] = [
   },
 ]
 
-const BLOBS: BlobDef[] = [
-  {
-    size: 430,
-    top: '8%',
-    left: '54%',
-    ampX: 82,
-    ampY: 68,
-    dur: 15,
-    opacity: 0.34,
-    tone: 0,
-    depth: 0.12,
-  },
-  {
-    size: 390,
-    top: '54%',
-    left: '74%',
-    ampX: 70,
-    ampY: 86,
-    dur: 17,
-    opacity: 0.26,
-    tone: 1,
-    depth: 0.07,
-  },
-  {
-    size: 410,
-    top: '30%',
-    left: '28%',
-    ampX: 78,
-    ampY: 62,
-    dur: 13,
-    opacity: 0.3,
-    tone: 2,
-    depth: 0.1,
-  },
-]
-
 const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1]
-
-// Soft, trailing spring for the pointer parallax — premium, not snappy.
-const PARALLAX_SPRING = { stiffness: 45, damping: 18, mass: 0.6 }
-
-function getBlobTone(baseColor: string, tone: 0 | 1 | 2) {
-  const tones: Record<string, string[]> = {
-    '#D6272E': ['#D6272E', '#DE5829', '#EBB2BB'],
-    '#FFB719': ['#FFB719', '#DE5829', '#F6D36B'],
-    '#72C3D7': ['#72C3D7', '#3FAFC8', '#B7E4EE'],
-    '#DE5829': ['#DE5829', '#D6272E', '#FFB719'],
-    '#EBB2BB': ['#EBB2BB', '#D6272E', '#F4C8D0'],
-  }
-
-  return tones[baseColor]?.[tone] ?? baseColor
-}
 
 export default function Services() {
   const reduce = useReducedMotion()
@@ -154,37 +85,6 @@ export default function Services() {
 
   const [hovered, setHovered] = useState<number | null>(null)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const [mouseEnabled, setMouseEnabled] = useState(false)
-
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-
-  const activeIndex = openIndex ?? hovered
-  const activeColor = activeIndex !== null ? SERVICES[activeIndex].color : '#72C3D7'
-
-  useEffect(() => {
-    const check = () => {
-      const fine = window.matchMedia('(pointer: fine)').matches
-      const wide = window.matchMedia('(min-width: 769px)').matches
-      if (fine && wide && !reduce) setMouseEnabled(true)
-    }
-    check()
-    // Re-check on first pointer move in case the check ran too early.
-    window.addEventListener('pointermove', check, { once: true })
-    return () => window.removeEventListener('pointermove', check)
-  }, [reduce])
-
-  useEffect(() => {
-    if (!mouseEnabled) return
-
-    const onMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX - window.innerWidth / 2)
-      mouseY.set(e.clientY - window.innerHeight / 2)
-    }
-
-    window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
-  }, [mouseEnabled, mouseX, mouseY])
 
   const toggleService = (index: number) => {
     setOpenIndex((current) => (current === index ? null : index))
@@ -194,7 +94,6 @@ export default function Services() {
     <section
       id="servicios"
       ref={sectionRef}
-      className="services-section"
       style={{
         position: 'relative',
         backgroundColor: '#F5F0E8',
@@ -205,18 +104,7 @@ export default function Services() {
         overflow: 'hidden',
       }}
     >
-      {!reduce &&
-        BLOBS.map((blob, index) => (
-          <Blob
-            key={index}
-            blob={blob}
-            color={activeColor}
-            mouseX={mouseX}
-            mouseY={mouseY}
-            mouseEnabled={mouseEnabled}
-            reduce={!!reduce}
-          />
-        ))}
+      <BubbleField lightMode={true} />
 
       {/* Vignette seats the blobs into the beige and keeps the list legible. */}
       <div aria-hidden="true" className="bg-vignette-light" />
@@ -237,7 +125,7 @@ export default function Services() {
             margin: 0,
             padding: 0,
             marginTop: 'clamp(24px, 4vh, 44px)',
-            borderTop: '1px solid rgba(26,26,26,0.12)',
+            borderTop: '1px solid rgba(26,26,26,0.10)',
           }}
           onMouseLeave={() => setHovered(null)}
         >
@@ -260,98 +148,6 @@ export default function Services() {
         </ul>
       </div>
     </section>
-  )
-}
-
-function Blob({
-  blob,
-  color,
-  mouseX,
-  mouseY,
-  mouseEnabled,
-  reduce,
-}: {
-  blob: BlobDef
-  color: string
-  mouseX: ReturnType<typeof useMotionValue<number>>
-  mouseY: ReturnType<typeof useMotionValue<number>>
-  mouseEnabled: boolean
-  reduce: boolean
-}) {
-  // Outer layer = pointer parallax; inner layer = idle drift + the
-  // hover-reactive colour shift. Nesting composes both transforms instead
-  // of letting `animate` and `style` fight over x/y (the original bug).
-  const springX = useSpring(mouseX, PARALLAX_SPRING)
-  const springY = useSpring(mouseY, PARALLAX_SPRING)
-  const parallaxX = useTransform(springX, (v) => v * blob.depth)
-  const parallaxY = useTransform(springY, (v) => v * blob.depth)
-  const toneColor = getBlobTone(color, blob.tone)
-
-  return (
-    <motion.div
-      aria-hidden="true"
-      style={{
-        position: 'absolute',
-        top: blob.top,
-        left: blob.left,
-        width: blob.size,
-        height: blob.size,
-        zIndex: 0,
-        pointerEvents: 'none',
-        willChange: 'transform',
-        x: mouseEnabled ? parallaxX : 0,
-        y: mouseEnabled ? parallaxY : 0,
-      }}
-    >
-      <motion.div
-        animate={
-          reduce
-            ? {}
-            : {
-                x: [
-                  -blob.ampX,
-                  blob.ampX,
-                  -blob.ampX * 0.6,
-                  blob.ampX * 0.8,
-                  -blob.ampX,
-                ],
-                y: [
-                  blob.ampY * 0.5,
-                  -blob.ampY,
-                  blob.ampY * 0.8,
-                  -blob.ampY * 0.4,
-                  blob.ampY * 0.5,
-                ],
-                backgroundColor: toneColor,
-              }
-        }
-        transition={
-          reduce
-            ? {}
-            : {
-                duration: blob.dur,
-                repeat: Infinity,
-                repeatType: 'mirror',
-                ease: 'easeInOut',
-                backgroundColor: {
-                  duration: 0.45,
-                  repeat: 0,
-                  ease: 'easeOut',
-                },
-              }
-        }
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: '50%',
-          backgroundColor: toneColor,
-          filter: 'blur(135px)',
-          opacity: blob.opacity * 1.4, // multiply is subtler — compensate
-          mixBlendMode: 'multiply',
-          willChange: 'transform',
-        }}
-      />
-    </motion.div>
   )
 }
 
@@ -430,7 +226,7 @@ function ServiceRow({
       onMouseEnter={onHover}
       style={{
         position: 'relative',
-        borderBottom: '1px solid rgba(26,26,26,0.12)',
+        borderBottom: '1px solid rgba(26,26,26,0.10)',
         cursor: 'pointer',
       }}
     >
