@@ -5,9 +5,8 @@ import {
   motion,
   useMotionValue,
   useSpring,
-  useReducedMotion,
-  useScroll,
   useTransform,
+  useReducedMotion,
 } from 'framer-motion'
 
 type Segment = {
@@ -39,10 +38,13 @@ const LINE_1: Segment[] = [
 
 const LINE_2: Segment[] = [
   { text: 'proyectos', underline: '#FFB719', bold: true },
-  { text: ' y destacamos ' },
+  { text: ' y ' },
 ]
 
-const FINAL_TEXT = 'lo que debe ser subrayado'
+// "destacamos" lives in the final phrase so it gets the erase + rewrite-in-red
+// treatment. Full sentence: "Tomamos marcas, mensajes y proyectos y destacamos
+// lo que merece ser subrayado."
+const FINAL_TEXT = 'destacamos lo que merece ser subrayado'
 
 const BASE_SEGMENTS = [...LINE_1, ...LINE_2]
 const BASE_TEXT = BASE_SEGMENTS.map((segment) => segment.text).join('')
@@ -70,55 +72,27 @@ export default function Statement() {
   const [runKey, setRunKey] = useState(0)
   const [mouseEnabled, setMouseEnabled] = useState(false)
 
-  // The closing phrase types in white, then the signature red underline is
-  // drawn beneath it. (On the old cream theme it flipped black→red text; on
-  // black that reveal is replaced by white text + a red "subrayado".)
-  const [finalMode, setFinalMode] = useState<'hidden' | 'typing' | 'done'>(
-    'hidden'
-  )
+  // The closing phrase types in white, erases itself, then rewrites in red and
+  // finally draws the red "subrayado" beneath it.
+  const [finalMode, setFinalMode] = useState<
+    'hidden' | 'typing' | 'erasing' | 'retyping' | 'done'
+  >('hidden')
+  const [finalColor, setFinalColor] = useState<'white' | 'red'>('white')
 
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start start', 'end end'],
-  })
-
-  const mascotX = useTransform(
-    scrollYProgress,
-    [0, 0.15, 0.42, 0.58, 0.82, 1],
-    ['-55vw', '-22vw', '22vw', '52vw', '88vw', '135vw']
-  )
-
-  const mascotY = useTransform(
-    scrollYProgress,
-    [0, 0.25, 0.5, 0.68, 1],
-    [12, 0, -34, -6, 6]
-  )
-
-  const mascotRotate = useTransform(
-    scrollYProgress,
-    [0, 0.36, 0.5, 0.64, 1],
-    [-2, -4, 360, 368, 372]
-  )
-
-  const mascotScale = useTransform(
-    scrollYProgress,
-    [0, 0.32, 0.5, 0.7, 1],
-    [1, 1.08, 1.22, 1.1, 1.02]
-  )
-
-  const mascotOpacity = useTransform(
-    scrollYProgress,
-    [0, 0.05, 0.92, 1],
-    [1, 1, 1, 0]
-  )
-
   useEffect(() => {
-    const fine = window.matchMedia('(pointer: fine)').matches
-    const wide = window.matchMedia('(min-width: 769px)').matches
-    if (fine && wide && !reduce) setMouseEnabled(true)
+    const check = () => {
+      const fine = window.matchMedia('(pointer: fine)').matches
+      const wide = window.matchMedia('(min-width: 769px)').matches
+      if (fine && wide && !reduce) setMouseEnabled(true)
+    }
+    check()
+    // Re-check on first pointer move in case the check ran too early
+    // (e.g. while the preloader was still blocking input).
+    window.addEventListener('pointermove', check, { once: true })
+    return () => window.removeEventListener('pointermove', check)
   }, [reduce])
 
   useEffect(() => {
@@ -162,6 +136,7 @@ export default function Statement() {
     if (reduce) {
       setBaseTyped(BASE_TEXT.length)
       setFinalTyped(FINAL_TEXT.length)
+      setFinalColor('red')
       setFinalMode('done')
       return
     }
@@ -187,7 +162,51 @@ export default function Statement() {
 
               if (finalIndex >= FINAL_TEXT.length) {
                 window.clearInterval(finalInterval)
-                timers.push(window.setTimeout(() => setFinalMode('done'), 260))
+
+                // Phase 1 done: pause, then ERASE the phrase backwards.
+                timers.push(
+                  window.setTimeout(() => {
+                    setFinalMode('erasing')
+                    let eraseIndex = FINAL_TEXT.length
+
+                    const eraseInterval = window.setInterval(() => {
+                      eraseIndex -= 1
+                      setFinalTyped(eraseIndex)
+
+                      if (eraseIndex <= 0) {
+                        window.clearInterval(eraseInterval)
+
+                        // Phase 2 done: pause, then RETYPE in red.
+                        timers.push(
+                          window.setTimeout(() => {
+                            setFinalColor('red')
+                            setFinalMode('retyping')
+                            let retypeIndex = 0
+
+                            const retypeInterval = window.setInterval(() => {
+                              retypeIndex += 1
+                              setFinalTyped(retypeIndex)
+
+                              if (retypeIndex >= FINAL_TEXT.length) {
+                                window.clearInterval(retypeInterval)
+                                timers.push(
+                                  window.setTimeout(
+                                    () => setFinalMode('done'),
+                                    260
+                                  )
+                                )
+                              }
+                            }, TYPE_SPEED)
+
+                            timers.push(retypeInterval)
+                          }, 180)
+                        )
+                      }
+                    }, TYPE_SPEED * 0.7) // erase slightly faster than typing
+
+                    timers.push(eraseInterval)
+                  }, 400)
+                )
               }
             }, TYPE_SPEED)
 
@@ -214,15 +233,13 @@ export default function Statement() {
       ref={sectionRef}
       style={{
         position: 'relative',
-        height: '220vh',
         backgroundColor: '#0D0D0D',
         marginTop: '-1px',
       }}
     >
       <div
         style={{
-          position: 'sticky',
-          top: 0,
+          position: 'relative',
           minHeight: '100vh',
           backgroundColor: '#0D0D0D',
           display: 'flex',
@@ -245,39 +262,6 @@ export default function Statement() {
             reduce={!!reduce}
           />
         ))}
-
-        <motion.div
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            left: 0,
-            bottom: 'clamp(44px, 7vh, 92px)',
-            zIndex: 2,
-            pointerEvents: 'none',
-            width: 'clamp(235px, 26vw, 420px)',
-            height: 'auto',
-            transformOrigin: '50% 64%',
-            filter: 'drop-shadow(0 18px 34px rgba(0,0,0,0.55))',
-            x: reduce ? '135vw' : mascotX,
-            y: reduce ? 0 : mascotY,
-            rotate: reduce ? 0 : mascotRotate,
-            scale: reduce ? 1 : mascotScale,
-            opacity: reduce ? 0 : mascotOpacity,
-          }}
-        >
-          <video
-            src="/assets/mascot-skate.webm"
-            autoPlay
-            muted
-            loop
-            playsInline
-            style={{
-              width: '100%',
-              height: 'auto',
-              display: 'block',
-            }}
-          />
-        </motion.div>
 
         <div
           className="container"
@@ -322,12 +306,15 @@ export default function Statement() {
                 <FinalText
                   typed={finalTyped}
                   showUnderline={showFinalUnderline}
+                  color={finalColor === 'red' ? '#D6272E' : '#F5F0E8'}
                   reduce={!!reduce}
                 />
               )}
 
               {active && finalMode !== 'done' && (
-                <TypingCursor color="#F5F0E8" />
+                <TypingCursor
+                  color={finalColor === 'red' ? '#D6272E' : '#F5F0E8'}
+                />
               )}
             </div>
           </div>
@@ -423,17 +410,20 @@ function TypedSegments({
 function FinalText({
   typed,
   showUnderline,
+  color,
   reduce,
 }: {
   typed: number
   showUnderline: boolean
+  color: string
   reduce: boolean
 }) {
   return (
     <span
       style={{
         position: 'relative',
-        color: '#F5F0E8',
+        color: color,
+        transition: 'color 0.2s ease',
         fontWeight: 700,
         whiteSpace: 'pre',
         display: 'inline-block',

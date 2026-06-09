@@ -163,10 +163,15 @@ export default function Services() {
   const activeColor = activeIndex !== null ? SERVICES[activeIndex].color : '#72C3D7'
 
   useEffect(() => {
-    const fine = window.matchMedia('(pointer: fine)').matches
-    const wide = window.matchMedia('(min-width: 769px)').matches
-
-    if (fine && wide && !reduce) setMouseEnabled(true)
+    const check = () => {
+      const fine = window.matchMedia('(pointer: fine)').matches
+      const wide = window.matchMedia('(min-width: 769px)').matches
+      if (fine && wide && !reduce) setMouseEnabled(true)
+    }
+    check()
+    // Re-check on first pointer move in case the check ran too early.
+    window.addEventListener('pointermove', check, { once: true })
+    return () => window.removeEventListener('pointermove', check)
   }, [reduce])
 
   useEffect(() => {
@@ -189,9 +194,10 @@ export default function Services() {
     <section
       id="servicios"
       ref={sectionRef}
+      className="services-section"
       style={{
         position: 'relative',
-        backgroundColor: '#0D0D0D',
+        backgroundColor: '#F5F0E8',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
@@ -212,8 +218,8 @@ export default function Services() {
           />
         ))}
 
-      {/* Vignette seats the blobs into the black and keeps the list legible. */}
-      <div aria-hidden="true" className="bg-vignette" />
+      {/* Vignette seats the blobs into the beige and keeps the list legible. */}
+      <div aria-hidden="true" className="bg-vignette-light" />
 
       <div
         className="container"
@@ -231,7 +237,7 @@ export default function Services() {
             margin: 0,
             padding: 0,
             marginTop: 'clamp(24px, 4vh, 44px)',
-            borderTop: '1px solid rgba(245,240,232,0.14)',
+            borderTop: '1px solid rgba(26,26,26,0.12)',
           }}
           onMouseLeave={() => setHovered(null)}
         >
@@ -340,8 +346,8 @@ function Blob({
           borderRadius: '50%',
           backgroundColor: toneColor,
           filter: 'blur(135px)',
-          opacity: blob.opacity,
-          mixBlendMode: 'screen',
+          opacity: blob.opacity * 1.4, // multiply is subtler — compensate
+          mixBlendMode: 'multiply',
           willChange: 'transform',
         }}
       />
@@ -424,7 +430,7 @@ function ServiceRow({
       onMouseEnter={onHover}
       style={{
         position: 'relative',
-        borderBottom: '1px solid rgba(245,240,232,0.14)',
+        borderBottom: '1px solid rgba(26,26,26,0.12)',
         cursor: 'pointer',
       }}
     >
@@ -452,7 +458,7 @@ function ServiceRow({
             color:
               isHovered || isOpen
                 ? service.color
-                : 'rgba(245,240,232,0.48)',
+                : 'rgba(26,26,26,0.45)',
           }}
           transition={{ duration: 0.25, ease: EASE_OUT }}
           style={{
@@ -470,7 +476,7 @@ function ServiceRow({
         <span style={{ position: 'relative', display: 'inline-block' }}>
           <motion.span
             animate={{
-              color: isHovered || isOpen ? service.color : '#F5F0E8',
+              color: isHovered || isOpen ? service.color : '#1A1A1A',
             }}
             transition={{ duration: 0.25, ease: EASE_OUT }}
             style={{
@@ -519,7 +525,7 @@ function ServiceRow({
         <motion.span
           animate={{
             rotate: isOpen ? 45 : 0,
-            color: isHovered || isOpen ? service.color : 'rgba(245,240,232,0.55)',
+            color: isHovered || isOpen ? service.color : 'rgba(26,26,26,0.45)',
           }}
           transition={{ duration: 0.28, ease: EASE_OUT }}
           style={{
@@ -569,7 +575,7 @@ function ServiceRow({
               fontSize: 'clamp(16px, 1.55vw, 23px)',
               lineHeight: 1.45,
               letterSpacing: '-0.01em',
-              color: 'rgba(245,240,232,0.78)',
+              color: 'rgba(26,26,26,0.72)',
               margin: 0,
             }}
           >
@@ -596,18 +602,12 @@ function CopySpan({
 }) {
   if (part.glow === undefined) return <span>{part.text}</span>
 
-  const glowColor = getBlobTone(color, part.glow)
-
+  // Accent words use the service colour (no glow) on the beige background.
   return (
     <span
       style={{
-        color: '#F5F0E8',
+        color: color,
         fontWeight: 600,
-        textShadow: `
-          0 0 8px ${glowColor},
-          0 0 18px ${glowColor},
-          0 0 32px ${glowColor}
-        `,
       }}
     >
       {part.text}

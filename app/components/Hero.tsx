@@ -60,10 +60,16 @@ export default function Hero({ headline1 = "Let's make something" }: HeroProps) 
   const mouseY = useMotionValue(0)
 
   useEffect(() => {
-    const fine = window.matchMedia('(pointer: fine)').matches
-    const wide = window.matchMedia('(min-width: 769px)').matches
-
-    if (fine && wide && !reduce) setMouseEnabled(true)
+    const check = () => {
+      const fine = window.matchMedia('(pointer: fine)').matches
+      const wide = window.matchMedia('(min-width: 769px)').matches
+      if (fine && wide && !reduce) setMouseEnabled(true)
+    }
+    check()
+    // Re-check on first pointer move in case the check ran too early
+    // (e.g. while the preloader was still blocking input).
+    window.addEventListener('pointermove', check, { once: true })
+    return () => window.removeEventListener('pointermove', check)
   }, [reduce])
 
   useEffect(() => {
